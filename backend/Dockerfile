@@ -1,26 +1,18 @@
-FROM php:8.3-apache
+FROM php:8.4-apache
 
-# Install system dependencies
+# Install standard utilities
 RUN apt-get update && apt-get install -y \
     git \
     curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
     zip \
-    unzip \
-    libzip-dev \
-    libpq-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libwebp-dev
+    unzip
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Download official script to install PHP extensions (handles system dependencies automatically)
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN chmod +x /usr/local/bin/install-php-extensions
 
-# Configure and install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring xml gd zip bcmath
+# Install required PHP extensions for Laravel and its packages (dompdf, excel, intervention, etc.)
+RUN install-php-extensions pdo pdo_mysql pdo_pgsql mbstring gd zip bcmath xml intl
 
 # Enable Apache rewrite module
 RUN a2enmod rewrite
@@ -38,17 +30,25 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
+# Ensure all Laravel directories exist
+RUN mkdir -p storage/framework/cache/data \
+             storage/framework/sessions \
+             storage/framework/testing \
+             storage/framework/views \
+             storage/logs \
+             bootstrap/cache
+
 # Set up storage and bootstrap cache permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Install PHP dependencies
+# Install PHP dependencies (runs package discovery and Laravel boot scripts)
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
 # Expose port 80
 EXPOSE 80
 
-# Use a custom entrypoint script to run migrations and cache configurations
+# Use custom entrypoint script to run migrations and start Apache
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
