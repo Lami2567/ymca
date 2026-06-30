@@ -48,8 +48,10 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev
 # Fix ownership after all files are in place
 RUN chown -R www-data:www-data /var/www/html
 
-# Expose port 80
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 80
 
-# Auto-create SQLite database if connection is sqlite, run migrations, and start Apache
-CMD sh -c "if [ \"\${DB_CONNECTION:-sqlite}\" = \"sqlite\" ]; then DB_PATH=\"\${DB_DATABASE:-/var/www/html/database/database.sqlite}\"; mkdir -p \"\$(dirname \"\$DB_PATH\")\"; touch \"\$DB_PATH\"; chown -R www-data:www-data \"\$(dirname \"\$DB_PATH\")\"; fi && php artisan migrate --force && apache2-foreground"
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
