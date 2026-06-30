@@ -1,0 +1,14 @@
+.git
+.github
+vendor/
+.env
+.env.backup
+.phpunit.result.cache
+tests/
+storage/logs/*.log
+bootstrap/cache/*.php
+node_modules/
+npm-debug.log
+docker-compose.yml
+Dockerfile
+docker-entrypoint.sh
