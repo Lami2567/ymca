@@ -23,8 +23,14 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy backend files from monorepo root context
-COPY backend/ .
+# Copy application files (works whether build context is repo root or /backend)
+COPY . .
+
+# Safe directory alignment if build context was repo root (i.e. 'backend' directory exists)
+RUN if [ -d "backend" ]; then \
+        cp -r backend/. ./ && \
+        rm -rf backend frontend; \
+    fi
 
 # Install PHP dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
