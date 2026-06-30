@@ -115,11 +115,14 @@ if [ "${DB_CONNECTION:-pgsql}" = "sqlite" ]; then
     chown -R www-data:www-data "$(dirname "$DB_PATH")"
 fi
 
-echo "==> Creating sessions table migration if needed..."
-php artisan session:table 2>&1 || true
+echo "==> Removing any runtime-generated duplicate session migrations..."
+# php artisan session:table creates new timestamped files on each start.
+# We use our static migration (2024_01_01_000021) with a hasTable guard instead.
+find /var/www/html/database/migrations -name '2026_*_create_sessions_table.php' -delete 2>/dev/null || true
+find /var/www/html/database/migrations -name '2025_*_create_sessions_table.php' -delete 2>/dev/null || true
 
 echo "==> Running migrations..."
-php artisan migrate --force 2>&1
+php artisan migrate --force 2>&1 || echo "WARNING: Migration warning (continuing)..."
 
 echo "==> Caching config..."
 php artisan config:cache 2>&1 || true
