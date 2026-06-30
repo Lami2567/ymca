@@ -6,7 +6,13 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   },
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'koyeb.app'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.koyeb.app',
+      },
+    ],
   },
   async headers() {
     return [

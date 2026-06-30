@@ -7,11 +7,11 @@ interface User {
   email: string;
   first_name: string;
   last_name: string;
-  role: {
-    id: number;
-    name: string;
-    display_name: string;
-  };
+  full_name?: string;
+  role: string;              // API returns role name as a plain string e.g. "admin"
+  role_display_name?: string;
+  tenant_id?: number;
+  avatar_path?: string;
 }
 
 interface AuthState {
