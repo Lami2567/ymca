@@ -7,12 +7,12 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip
 
-# Download official script to install PHP extensions (handles system dependencies automatically)
-ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-RUN chmod +x /usr/local/bin/install-php-extensions
+# Copy the PHP extension installer from the official docker image (offline/registry friendly)
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-# Install required PHP extensions for Laravel and its packages (dompdf, excel, intervention, etc.)
-RUN install-php-extensions pdo pdo_mysql pdo_pgsql mbstring gd zip bcmath xml intl
+# Install required PHP extensions for Laravel (gd, zip, pdo_mysql, pdo_pgsql, bcmath, intl)
+# Note: mbstring and xml are already built-in in the base php:8.4-apache image
+RUN install-php-extensions pdo_mysql pdo_pgsql gd zip bcmath intl
 
 # Enable Apache rewrite module
 RUN a2enmod rewrite
@@ -27,8 +27,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
+# Copy application files (works whether build context is repo root or /backend)
 COPY . .
+
+# Align directories if build context was repo root (i.e. 'backend' directory exists)
+RUN if [ -d "backend" ]; then \
+        echo "Detected repo root build context. Aligning files..." && \
+        mv backend/* backend/.[!.]* ./ 2>/dev/null || true && \
+        rm -rf backend frontend; \
+    fi
+
+# Copy the entrypoint script to /usr/local/bin and make it executable
+RUN cp docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Ensure all Laravel directories exist
 RUN mkdir -p storage/framework/cache/data \
@@ -48,8 +59,5 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev
 # Expose port 80
 EXPOSE 80
 
-# Use custom entrypoint script to run migrations and start Apache
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
