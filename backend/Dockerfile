@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy Composer and PHP extension installer from official images
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+COPY --from=ghcr.io/mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
 
 # Install required PHP extensions for Laravel (gd, zip, pdo_mysql, pdo_pgsql, bcmath, intl)
 RUN install-php-extensions pdo_mysql pdo_pgsql gd zip bcmath intl
