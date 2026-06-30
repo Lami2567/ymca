@@ -33,13 +33,20 @@ RUN if [ -d "backend" ]; then \
     fi
 
 
+# Create required directories BEFORE composer install
+# (post-autoload-dump runs `php artisan package:discover` which needs bootstrap/cache)
+RUN mkdir -p storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache \
+        storage/logs \
+        bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 # Install PHP dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Ensure storage and bootstrap directories exist with correct permissions
-RUN mkdir -p storage bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+# Fix ownership after all files are in place
+RUN chown -R www-data:www-data /var/www/html
 
 # Expose port 80
 EXPOSE 80
