@@ -17,8 +17,10 @@ RUN install-php-extensions pdo_mysql pdo_pgsql gd zip bcmath intl
 # Enable Apache rewrite module
 RUN a2enmod rewrite
 
-# Change Apache document root to Laravel public directory
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Configure Apache: set document root, enable .htaccess, suppress ServerName warning
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf \
+    && sed -i '/<\/VirtualHost>/i\\t<Directory /var/www/html/public>\n\t\tAllowOverride All\n\t\tRequire all granted\n\t<\/Directory>' /etc/apache2/sites-available/000-default.conf \
+    && echo 'ServerName localhost' >> /etc/apache2/apache2.conf
 
 # Set working directory
 WORKDIR /var/www/html

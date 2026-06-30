@@ -5,11 +5,15 @@ ENV_FILE="/var/www/html/.env"
 
 echo "==> Generating .env from environment variables..."
 
+# NOTE: SESSION_DRIVER, CACHE_STORE, QUEUE_CONNECTION are HARDCODED to 'database'
+# to avoid Redis connection failures in single-container deployments.
+# Override them here only if you add a Redis sidecar.
+
 cat > "$ENV_FILE" <<EOF
 APP_NAME="${APP_NAME:-YMCA Academic ERP}"
 APP_ENV="${APP_ENV:-production}"
 APP_KEY="${APP_KEY}"
-APP_DEBUG="${APP_DEBUG:-false}"
+APP_DEBUG="${APP_DEBUG:-true}"
 APP_TIMEZONE="${APP_TIMEZONE:-UTC}"
 APP_URL="${APP_URL:-http://localhost}"
 
@@ -17,15 +21,12 @@ APP_LOCALE="${APP_LOCALE:-en}"
 APP_FALLBACK_LOCALE="${APP_FALLBACK_LOCALE:-en}"
 APP_FAKER_LOCALE="${APP_FAKER_LOCALE:-en_US}"
 
-APP_MAINTENANCE_DRIVER="${APP_MAINTENANCE_DRIVER:-file}"
-APP_MAINTENANCE_STORE="${APP_MAINTENANCE_STORE:-database}"
+APP_MAINTENANCE_DRIVER=file
 
 BCRYPT_ROUNDS="${BCRYPT_ROUNDS:-12}"
 
-LOG_CHANNEL="${LOG_CHANNEL:-stderr}"
-LOG_STACK="${LOG_STACK:-single}"
-LOG_DEPRECATIONS_CHANNEL="${LOG_DEPRECATIONS_CHANNEL:-null}"
-LOG_LEVEL="${LOG_LEVEL:-error}"
+LOG_CHANNEL=stderr
+LOG_LEVEL=debug
 
 DB_CONNECTION="${DB_CONNECTION:-pgsql}"
 DB_URL="${DB_URL}"
@@ -36,25 +37,20 @@ DB_USERNAME="${DB_USERNAME:-postgres}"
 DB_PASSWORD="${DB_PASSWORD}"
 DB_SSLMODE="${DB_SSLMODE:-prefer}"
 
-SESSION_DRIVER="${SESSION_DRIVER:-database}"
-SESSION_LIFETIME="${SESSION_LIFETIME:-120}"
-SESSION_ENCRYPT="${SESSION_ENCRYPT:-false}"
-SESSION_PATH="${SESSION_PATH:-/}"
-SESSION_DOMAIN="${SESSION_DOMAIN:-null}"
+# Hardcoded to 'database' — no Redis needed
+SESSION_DRIVER=database
+SESSION_LIFETIME=${SESSION_LIFETIME:-120}
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
 
-BROADCAST_CONNECTION="${BROADCAST_CONNECTION:-log}"
-FILESYSTEM_DISK="${FILESYSTEM_DISK:-local}"
-QUEUE_CONNECTION="${QUEUE_CONNECTION:-database}"
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
 
-CACHE_STORE="${CACHE_STORE:-database}"
+# Hardcoded to 'database' — no Redis needed
+QUEUE_CONNECTION=database
+CACHE_STORE=database
 CACHE_PREFIX="${CACHE_PREFIX}"
-
-REDIS_CLIENT="${REDIS_CLIENT:-predis}"
-REDIS_HOST="${REDIS_HOST:-127.0.0.1}"
-REDIS_PASSWORD="${REDIS_PASSWORD:-null}"
-REDIS_PORT="${REDIS_PORT:-6379}"
-REDIS_DATABASE="${REDIS_DATABASE:-0}"
-REDIS_CACHE_DB="${REDIS_CACHE_DB:-1}"
 
 MAIL_MAILER="${MAIL_MAILER:-log}"
 MAIL_HOST="${MAIL_HOST:-127.0.0.1}"
@@ -80,25 +76,34 @@ EOF
 chown www-data:www-data "$ENV_FILE"
 chmod 640 "$ENV_FILE"
 
-echo "==> Clearing config cache..."
-php artisan config:clear || true
+# Clear any stale config cache
+echo "==> Clearing config/route/view cache..."
+php artisan config:clear  2>&1 || true
+php artisan cache:clear   2>&1 || true
 
-# Handle SQLite database creation
+# Handle SQLite
 if [ "${DB_CONNECTION:-pgsql}" = "sqlite" ]; then
     DB_PATH="${DB_DATABASE:-/var/www/html/database/database.sqlite}"
-    echo "==> Setting up SQLite database at $DB_PATH..."
+    echo "==> Setting up SQLite at $DB_PATH..."
     mkdir -p "$(dirname "$DB_PATH")"
     touch "$DB_PATH"
     chown -R www-data:www-data "$(dirname "$DB_PATH")"
 fi
 
-echo "==> Caching Laravel config..."
-php artisan config:cache || true
+# Ensure sessions table migration exists (needed for SESSION_DRIVER=database)
+echo "==> Ensuring sessions migration exists..."
+php artisan session:table 2>&1 || true
 
-echo "==> Running database migrations..."
-php artisan migrate --force
+# Run migrations
+echo "==> Running migrations..."
+php artisan migrate --force 2>&1
 
-echo "==> Fixing storage permissions..."
+# Cache config for performance
+echo "==> Caching config..."
+php artisan config:cache 2>&1 || true
+
+# Fix permissions
+echo "==> Fixing permissions..."
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
