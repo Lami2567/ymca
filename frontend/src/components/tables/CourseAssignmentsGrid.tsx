@@ -52,6 +52,11 @@ export function CourseAssignmentsGrid({
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Sync rowData when parent re-fetches data (e.g. after a save)
+  React.useEffect(() => {
+    setRowData(initialData);
+  }, [initialData]);
+
   // Keep latest props in refs so column defs (memoized once) can always read
   // the freshest data without needing to be recreated.
   const quartersRef = useRef(quarters);
@@ -143,12 +148,16 @@ export function CourseAssignmentsGrid({
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: (params: any) => {
-        // Resolve the academic year ID from the row
-        let ayId = params.data.academic_year_id;
-        // Filter periods to the selected academic year; fall back to all if none set
-        const list = ayId
-          ? quartersRef.current.filter((q) => Number(q.academic_year_id) === Number(ayId))
-          : quartersRef.current;
+        // Show all quarters; if an academic year is selected on the row,
+        // show matching quarters first — but ALWAYS fall back to full list
+        // so the dropdown is never empty.
+        const ayId = params.data?.academic_year_id;
+        const allQuarters = quartersRef.current;
+        const filtered = ayId
+          ? allQuarters.filter((q) => Number(q.academic_year_id) === Number(ayId))
+          : allQuarters;
+        // Fall back to full list if the filtered result is empty
+        const list = filtered.length > 0 ? filtered : allQuarters;
         return { values: ['', ...list.map((q) => q.name)] };
       },
       valueParser: (params: any) => {
