@@ -70,12 +70,12 @@ class AssessmentConfiguration extends Model
     {
         $total = 0;
         
-        if (isset($scores['cw1'])) $total += $scores['cw1'] * ($this->cw1_weight / 100);
-        if (isset($scores['cw2'])) $total += $scores['cw2'] * ($this->cw2_weight / 100);
-        if (isset($scores['cw3'])) $total += $scores['cw3'] * ($this->cw3_weight / 100);
-        if (isset($scores['cw4'])) $total += $scores['cw4'] * ($this->cw4_weight / 100);
-        if (isset($scores['test'])) $total += $scores['test'] * ($this->test_weight / 100);
-        if (isset($scores['exam'])) $total += $scores['exam'] * ($this->exam_weight / 100);
+        if (isset($scores['cw1']) && $scores['cw1'] !== null) $total += (float)$scores['cw1'];
+        if (isset($scores['cw2']) && $scores['cw2'] !== null) $total += (float)$scores['cw2'];
+        if (isset($scores['cw3']) && $scores['cw3'] !== null) $total += (float)$scores['cw3'];
+        if (isset($scores['cw4']) && $scores['cw4'] !== null) $total += (float)$scores['cw4'];
+        if (isset($scores['test']) && $scores['test'] !== null) $total += (float)$scores['test'];
+        if (isset($scores['exam']) && $scores['exam'] !== null) $total += (float)$scores['exam'];
         
         return round($total, 2);
     }

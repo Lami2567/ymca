@@ -87,7 +87,12 @@ export function ResultsGrid({
         editable: true,
         valueParser: (params) => {
           const value = parseFloat(params.newValue);
-          return isNaN(value) || value < 0 || value > 100 ? null : value;
+          if (isNaN(value) || value < 0) return null;
+          if (value > weights.cw1_weight) {
+            toast.error(`CW1 score cannot exceed its weight of ${weights.cw1_weight}%`);
+            return null;
+          }
+          return value;
         },
         cellStyle: (params) => ({
           backgroundColor: params.value !== null ? '#f0fdf4' : '#f9fafb',
@@ -104,7 +109,12 @@ export function ResultsGrid({
         editable: true,
         valueParser: (params) => {
           const value = parseFloat(params.newValue);
-          return isNaN(value) || value < 0 || value > 100 ? null : value;
+          if (isNaN(value) || value < 0) return null;
+          if (value > weights.cw2_weight) {
+            toast.error(`CW2 score cannot exceed its weight of ${weights.cw2_weight}%`);
+            return null;
+          }
+          return value;
         },
         cellStyle: (params) => ({
           backgroundColor: params.value !== null ? '#f0fdf4' : '#f9fafb',
@@ -121,7 +131,12 @@ export function ResultsGrid({
         editable: true,
         valueParser: (params) => {
           const value = parseFloat(params.newValue);
-          return isNaN(value) || value < 0 || value > 100 ? null : value;
+          if (isNaN(value) || value < 0) return null;
+          if (value > weights.cw3_weight) {
+            toast.error(`CW3 score cannot exceed its weight of ${weights.cw3_weight}%`);
+            return null;
+          }
+          return value;
         },
         cellStyle: (params) => ({
           backgroundColor: params.value !== null ? '#f0fdf4' : '#f9fafb',
@@ -138,7 +153,12 @@ export function ResultsGrid({
         editable: true,
         valueParser: (params) => {
           const value = parseFloat(params.newValue);
-          return isNaN(value) || value < 0 || value > 100 ? null : value;
+          if (isNaN(value) || value < 0) return null;
+          if (value > weights.cw4_weight) {
+            toast.error(`CW4 score cannot exceed its weight of ${weights.cw4_weight}%`);
+            return null;
+          }
+          return value;
         },
         cellStyle: (params) => ({
           backgroundColor: params.value !== null ? '#f0fdf4' : '#f9fafb',
@@ -155,7 +175,12 @@ export function ResultsGrid({
         editable: true,
         valueParser: (params) => {
           const value = parseFloat(params.newValue);
-          return isNaN(value) || value < 0 || value > 100 ? null : value;
+          if (isNaN(value) || value < 0) return null;
+          if (value > weights.test_weight) {
+            toast.error(`Test score cannot exceed its weight of ${weights.test_weight}%`);
+            return null;
+          }
+          return value;
         },
         cellStyle: (params) => ({
           backgroundColor: params.value !== null ? '#f0fdf4' : '#f9fafb',
@@ -172,7 +197,12 @@ export function ResultsGrid({
         editable: true,
         valueParser: (params) => {
           const value = parseFloat(params.newValue);
-          return isNaN(value) || value < 0 || value > 100 ? null : value;
+          if (isNaN(value) || value < 0) return null;
+          if (value > weights.exam_weight) {
+            toast.error(`Exam score cannot exceed its weight of ${weights.exam_weight}%`);
+            return null;
+          }
+          return value;
         },
         cellStyle: (params) => ({
           backgroundColor: params.value !== null ? '#f0fdf4' : '#f9fafb',
@@ -226,18 +256,18 @@ export function ResultsGrid({
     const data = node.data;
     
     let total = 0;
-    if (data.cw1_score !== null && data.cw1_score !== undefined) total += Number(data.cw1_score) * (weights.cw1_weight / 100);
-    if (data.cw2_score !== null && data.cw2_score !== undefined) total += Number(data.cw2_score) * (weights.cw2_weight / 100);
-    if (data.cw3_score !== null && data.cw3_score !== undefined) total += Number(data.cw3_score) * (weights.cw3_weight / 100);
-    if (data.cw4_score !== null && data.cw4_score !== undefined) total += Number(data.cw4_score) * (weights.cw4_weight / 100);
-    if (data.test_score !== null && data.test_score !== undefined) total += Number(data.test_score) * (weights.test_weight / 100);
-    if (data.exam_score !== null && data.exam_score !== undefined) total += Number(data.exam_score) * (weights.exam_weight / 100);
+    if (data.cw1_score !== null && data.cw1_score !== undefined) total += Number(data.cw1_score);
+    if (data.cw2_score !== null && data.cw2_score !== undefined) total += Number(data.cw2_score);
+    if (data.cw3_score !== null && data.cw3_score !== undefined) total += Number(data.cw3_score);
+    if (data.cw4_score !== null && data.cw4_score !== undefined) total += Number(data.cw4_score);
+    if (data.test_score !== null && data.test_score !== undefined) total += Number(data.test_score);
+    if (data.exam_score !== null && data.exam_score !== undefined) total += Number(data.exam_score);
     
     node.setData({
       ...data,
       total_score: parseFloat(total.toFixed(2)),
     });
-  }, [weights]);
+  }, []);
 
   const handleSave = async () => {
     setLoading(true);
