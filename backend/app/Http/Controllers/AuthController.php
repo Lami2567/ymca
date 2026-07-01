@@ -128,8 +128,8 @@ class AuthController extends Controller
                 'role_display_name' => $user->role?->display_name,
                 'permissions' => $user->role?->permissions ?? [],
                 'tenant_id' => $user->tenant_id,
-                'student' => $user->student,
-                'lecturer' => $user->lecturer,
+                'student' => $user->student?->load('program.department'),
+                'lecturer' => $user->lecturer?->load('department'),
             ],
         ]);
     }

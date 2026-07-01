@@ -280,12 +280,14 @@ export default function StudentProfilePage() {
                   <Calendar className="h-4 w-4" />
                   Admission Date
                 </p>
-                <p className="font-semibold text-gray-900">{profile.admission_date}</p>
+                <p className="font-semibold text-gray-900">
+                  {profile.admission_date ? new Date(profile.admission_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Expected Graduation</p>
                 <p className="font-semibold text-gray-900">
-                  {profile.expected_graduation_date || 'Not set'}
+                  {profile.expected_graduation_date ? new Date(profile.expected_graduation_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}
                 </p>
               </div>
               <div className="space-y-1">
