@@ -48,10 +48,29 @@ export default function StudentEnrollmentPage() {
     try {
       setLoading(true);
       
-      // Fetch current term info
+      // 1. Fetch student/user profile first to determine program period type
+      const meRes = await api.get('/auth/me');
+      const user = meRes.data.data;
+      const student = user.student;
+      
+      if (!student) {
+        toast.error('Student profile not found.');
+        setLoading(false);
+        return;
+      }
+
+      setStudentYear(student.current_year_of_study || 1);
+
+      // Determine period type based on program type
+      const programType = student.program?.type;
+      const periodType = (programType === 'degree' || programType === 'masters' || programType === 'phd')
+        ? 'semester'
+        : 'quarter';
+
+      // 2. Fetch academic year and the correct current quarter for this period type
       const [ayRes, qRes] = await Promise.all([
         api.get('/academic-years/current'),
-        api.get('/quarters/current')
+        api.get(`/quarters/current?period_type=${periodType}`)
       ]);
       
       const ay = ayRes.data.data;
@@ -61,32 +80,25 @@ export default function StudentEnrollmentPage() {
       setCurrentQuarter(q);
 
       if (ay && q) {
-        // Fetch all course units for student's program & quarter
-        const meRes = await api.get('/auth/me');
-        const user = meRes.data.data;
-        const student = user.student;
+        // 3. Fetch all course units for student's program & quarter
+        const coursesRes = await api.get('/course-units', {
+          params: { 
+            program_id: student.program_id,
+            quarter_id: q.id,
+            per_page: 100
+          }
+        });
+        
+        setCourseUnits(coursesRes.data.data);
 
-        if (student) {
-          setStudentYear(student.current_year_of_study || 1);
-          const coursesRes = await api.get('/course-units', {
-            params: { 
-              program_id: student.program_id,
-              quarter_id: q.id,
-              per_page: 100
-            }
-          });
-          
-          setCourseUnits(coursesRes.data.data);
-
-          // Fetch student's current enrollments
-          const enrollmentsRes = await api.get('/student/enrollments', {
-            params: { quarter_id: q.id }
-          });
-          
-          const enrolledIds = enrollmentsRes.data.data.map((e: any) => e.course_unit_id);
-          setEnrolledCourseIds(enrolledIds);
-          setSelectedCourseIds(enrolledIds); // Pre-select already enrolled
-        }
+        // 4. Fetch student's current enrollments
+        const enrollmentsRes = await api.get('/student/enrollments', {
+          params: { quarter_id: q.id }
+        });
+        
+        const enrolledIds = enrollmentsRes.data.data.map((e: any) => e.course_unit_id);
+        setEnrolledCourseIds(enrolledIds);
+        setSelectedCourseIds(enrolledIds); // Pre-select already enrolled
       }
     } catch (error) {
       console.error('Failed to fetch enrollment data', error);

@@ -99,6 +99,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/programs', [ProgramController::class, 'index']);
         Route::get('/academic-years/current', [AcademicYearController::class, 'current']);
         Route::get('/quarters/current', [QuarterController::class, 'current']);
+        Route::get('/course-units', [CourseUnitController::class, 'index']);
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
