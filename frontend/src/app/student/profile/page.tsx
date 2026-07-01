@@ -54,7 +54,7 @@ export default function StudentProfilePage() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const meRes = await api.get('/auth/me');
+      const meRes = await api.get('/auth/me', { skipCache: true } as any);
       const userData = meRes.data.data;
       if (userData.student) {
         setProfile({
@@ -126,7 +126,13 @@ export default function StudentProfilePage() {
   if (!profile) {
     return (
       <StudentLayout>
-        <div className="p-8 text-red-600">Failed to load profile data.</div>
+        <div className="p-8 max-w-3xl mx-auto">
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+            <User className="h-12 w-12 text-muted-foreground opacity-40" />
+            <h2 className="text-xl font-semibold text-gray-700">Profile Not Available</h2>
+            <p className="text-muted-foreground">Your student profile could not be loaded. Please contact your administrator.</p>
+          </div>
+        </div>
       </StudentLayout>
     );
   }

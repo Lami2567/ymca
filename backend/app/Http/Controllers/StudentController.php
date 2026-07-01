@@ -134,10 +134,30 @@ class StudentController extends Controller
         ]);
     }
 
-    public function enrollments(Request $request): JsonResponse
+    /**
+     * Resolve the student for the authenticated user, or return a 404 response.
+     * Returns [student, null] on success, or [null, JsonResponse] on failure.
+     */
+    private function resolveStudent(): array
     {
         $student = auth()->user()->student;
-        
+        if (!$student) {
+            return [null, response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'STUDENT_NOT_FOUND',
+                    'message' => 'No student profile found for this user.',
+                ],
+            ], 404)];
+        }
+        return [$student, null];
+    }
+
+    public function enrollments(Request $request): JsonResponse
+    {
+        [$student, $err] = $this->resolveStudent();
+        if ($err) return $err;
+
         $query = $student->enrollments()->with(['courseUnit', 'result']);
 
         if ($request->quarter_id) {
@@ -154,8 +174,9 @@ class StudentController extends Controller
 
     public function results(Request $request): JsonResponse
     {
-        $student = auth()->user()->student;
-        
+        [$student, $err] = $this->resolveStudent();
+        if ($err) return $err;
+
         $query = $student->results()->with(['courseUnit', 'quarter', 'academicYear'])->published();
 
         if ($request->quarter_id) {
@@ -172,8 +193,9 @@ class StudentController extends Controller
 
     public function transcript(): JsonResponse
     {
-        $student = auth()->user()->student;
-        
+        [$student, $err] = $this->resolveStudent();
+        if ($err) return $err;
+
         $results = $student->results()
             ->with(['courseUnit', 'quarter', 'academicYear'])
             ->published()
@@ -186,7 +208,7 @@ class StudentController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'student' => $student->load(['user', 'program']),
+                'student' => $student->load(['user', 'program.department']),
                 'results' => $results,
                 'gpa' => $gpa,
             ],
@@ -195,7 +217,9 @@ class StudentController extends Controller
 
     public function gpa(): JsonResponse
     {
-        $student = auth()->user()->student;
+        [$student, $err] = $this->resolveStudent();
+        if ($err) return $err;
+
         $gpa = $student->calculateGPA();
 
         return response()->json([
@@ -215,7 +239,9 @@ class StudentController extends Controller
             'academic_year_id' => 'required|exists:academic_years,id',
         ]);
 
-        $student = auth()->user()->student;
+        [$student, $err] = $this->resolveStudent();
+        if ($err) return $err;
+
         $enrollments = [];
 
         \Illuminate\Support\Facades\DB::beginTransaction();
